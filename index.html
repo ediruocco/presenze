@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gestione Presenze</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+<div class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <rect width="28" height="28" rx="8" fill="#1D9E75"/>
+        <rect x="6" y="7" width="16" height="2" rx="1" fill="white"/>
+        <rect x="6" y="12" width="10" height="2" rx="1" fill="white" opacity=".7"/>
+        <rect x="6" y="17" width="13" height="2" rx="1" fill="white" opacity=".5"/>
+      </svg>
+      <span>Presenze</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-btn active" data-view="calendar">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        Calendario
+      </button>
+      <button class="nav-btn" data-view="stats">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="10" width="4" height="11"/><rect x="10" y="6" width="4" height="15"/><rect x="17" y="3" width="4" height="18"/></svg>
+        Riepilogo
+      </button>
+    </nav>
+
+    <div class="sidebar-section">
+      <div class="section-label">Persone</div>
+      <div id="peopleList" class="people-list"></div>
+      <button class="btn-ghost btn-sm" id="addPersonBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Aggiungi persona
+      </button>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="section-label">Dati</div>
+      <button class="btn-ghost btn-sm" id="importBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Importa Excel
+      </button>
+      <button class="btn-ghost btn-sm" id="exportBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Esporta JSON
+      </button>
+      <button class="btn-ghost btn-sm" id="clearBtn" style="color:#E24B4A">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        Cancella dati
+      </button>
+    </div>
+
+    <div class="sidebar-footer">v1.0.0</div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main-content">
+
+    <!-- CALENDAR VIEW -->
+    <section id="view-calendar" class="view active">
+      <div class="view-header">
+        <div>
+          <h1 id="monthTitle">Maggio 2026</h1>
+          <p class="view-sub" id="viewSub">Clicca su un giorno per aggiungere una voce</p>
+        </div>
+        <div class="month-nav">
+          <button class="icon-btn" id="prevMonth" title="Mese precedente">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <button class="icon-btn" id="todayBtn" title="Oggi">Oggi</button>
+          <button class="icon-btn" id="nextMonth" title="Mese successivo">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="legend-bar">
+        <span class="legend-chip presenza">Presenza</span>
+        <span class="legend-chip smart">Smart Working</span>
+        <span class="legend-chip ferie">Ferie/Fp</span>
+        <span class="legend-chip malattia">Malattia</span>
+        <span class="legend-chip permesso">Permesso</span>
+        <span class="legend-chip riposo">Riposo Comp.</span>
+      </div>
+
+      <div class="calendar-wrapper">
+        <div class="cal-header-row">
+          <div>Lun</div><div>Mar</div><div>Mer</div><div>Gio</div><div>Ven</div>
+          <div class="weekend">Sab</div><div class="weekend">Dom</div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+    </section>
+
+    <!-- STATS VIEW -->
+    <section id="view-stats" class="view">
+      <div class="view-header">
+        <div>
+          <h1>Riepilogo annuale</h1>
+          <p class="view-sub" id="statsYear">Anno 2026</p>
+        </div>
+        <div>
+          <select id="statsYearSelect" class="year-select"></select>
+        </div>
+      </div>
+      <div id="statsContent"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- DAY MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal" id="dayModal">
+    <div class="modal-header">
+      <h3 id="modalDate">Giovedì 1 Maggio 2026</h3>
+      <button class="icon-btn modal-close" id="modalClose">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-entries" id="modalEntries"></div>
+      <div class="modal-add">
+        <div class="form-row">
+          <select id="modalPerson"></select>
+          <select id="modalType">
+            <option value="P">🏢 Presenza</option>
+            <option value="SW">💻 Smart Working</option>
+            <option value="Fp">🌴 Ferie Anno Prec.</option>
+            <option value="Fc">🌴 Ferie Anno Corr.</option>
+            <option value="M">🤒 Malattia</option>
+            <option value="A41">📋 Permesso personale</option>
+            <option value="A44">🩺 Visita medica</option>
+            <option value="RC">🔄 Riposo Comp.</option>
+            <option value="PB">🎉 Festività soppressa</option>
+            <option value="PE">📝 Permesso esame</option>
+            <option value="PL">♿ Permesso L.104</option>
+            <option value="PS">🤝 Permesso sindacale</option>
+            <option value="MP">🏠 Motivi personali</option>
+          </select>
+          <button class="btn-primary" id="addEntryBtn">Aggiungi</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-overlay" id="importOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Importa da Excel</h3>
+      <button class="icon-btn" id="importClose">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p class="import-hint">Supporta il formato <strong>Foglio-presenze</strong> con struttura mensile (righe 8–19, colonne 1–31).<br>I codici supportati: P, SW, Fp, Fc, M, A41, A44, RC, PB, PE, PL, PS, MP.</p>
+      <div class="drop-zone" id="dropZone">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <p>Trascina qui il file <strong>.xlsx</strong> oppure</p>
+        <label class="btn-primary" for="fileInput">Scegli file</label>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" />
+      </div>
+      <div id="importStatus" class="import-status"></div>
+      <div id="importPreview" class="import-preview"></div>
+      <div id="importActions" style="display:none;margin-top:1rem">
+        <div class="form-row">
+          <div>
+            <label class="form-label">Assegna a persona</label>
+            <select id="importPerson"></select>
+          </div>
+          <div style="display:flex;align-items:flex-end">
+            <button class="btn-primary" id="confirmImportBtn">Importa presenze</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD PERSON MODAL -->
+<div class="modal-overlay" id="addPersonOverlay">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h3>Aggiungi persona</h3>
+      <button class="icon-btn" id="addPersonClose">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Nome e cognome</label>
+        <input type="text" id="newPersonName" placeholder="es. Mario Rossi" />
+      </div>
+      <div class="form-group" style="margin-top:.75rem">
+        <label class="form-label">Matricola (opzionale)</label>
+        <input type="text" id="newPersonMatricola" placeholder="es. 57006" />
+      </div>
+      <div style="margin-top:1rem;display:flex;gap:8px">
+        <button class="btn-primary" id="confirmAddPerson">Aggiungi</button>
+        <button class="btn-ghost" id="cancelAddPerson">Annulla</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="hiddenFileInput" accept=".xlsx,.xls" style="display:none" />
+
+<script src="app.js"></script>
+</body>
+</html>
