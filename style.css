@@ -586,3 +586,60 @@ select:focus, input[type="text"]:focus {
   .main-content { padding: 16px; }
   .cal-cell { min-height: 60px; }
 }
+
+/* ===== GIST SYNC ===== */
+.sync-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 20px;
+  cursor: default;
+  white-space: nowrap;
+}
+.sync-cloud { background: var(--accent-light); color: var(--accent-dark); }
+.sync-local { background: var(--surface2); color: var(--text-3); border: 0.5px solid var(--border-md); }
+
+.sync-status {
+  font-size: 11px;
+  min-height: 16px;
+  padding: 2px 0;
+  color: var(--text-3);
+}
+.sync-saving  { color: var(--amber); }
+.sync-ok      { color: var(--accent-dark); }
+.sync-error   { color: var(--red); }
+.sync-loading { color: var(--blue); }
+.sync-idle    { color: transparent; }
+
+.gist-info-box {
+  background: var(--blue-light);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-size: 12.5px;
+  color: var(--text-2);
+  line-height: 1.65;
+}
+.gist-info-box a { color: var(--blue); }
+.gist-info-box code {
+  background: rgba(55,138,221,0.15);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+input[type="password"] {
+  font-size: 13px;
+  padding: 8px 10px;
+  border: 0.5px solid var(--border-md);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  width: 100%;
+}
+input[type="password"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(29,158,117,0.12);
+}

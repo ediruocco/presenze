@@ -56,12 +56,94 @@ let state = {
   importedData: null,
 };
 
-/* ===== PERSISTENCE ===== */
-function save() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ people: state.people, entries: state.entries }));
+/* ===== GITHUB GIST PERSISTENCE ===== */
+// Settings stored in localStorage (only credentials, never data)
+const SETTINGS_KEY = 'presenze_settings_v1';
+
+function getSettings() {
+  try { return JSON.parse(localStorage.getItem(SETTINGS_KEY)) || {}; } catch(e) { return {}; }
+}
+function saveSettings(s) {
+  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
 }
 
-function load() {
+// Status indicator
+function setSyncStatus(status, msg) {
+  const el = document.getElementById('syncStatus');
+  if (!el) return;
+  const icons = { idle:'', saving:'⏳', ok:'✓', error:'⚠️', loading:'⏳' };
+  el.textContent = (icons[status] || '') + ' ' + msg;
+  el.className = 'sync-status sync-' + status;
+}
+
+// Serialize data payload
+function buildPayload() {
+  return JSON.stringify({ people: state.people, entries: state.entries }, null, 2);
+}
+
+// Save: Gist first, localStorage as fallback cache
+async function save() {
+  const s = getSettings();
+  // Always keep a local cache
+  localStorage.setItem(STORAGE_KEY, buildPayload());
+
+  if (!s.token || !s.gistId) return; // no Gist configured
+
+  setSyncStatus('saving', 'Salvataggio...');
+  try {
+    const res = await fetch(`https://api.github.com/gists/${s.gistId}`, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `token ${s.token}`,
+        'Content-Type': 'application/json',
+        'X-GitHub-Api-Version': '2022-11-28'
+      },
+      body: JSON.stringify({
+        files: { 'presenze-data.json': { content: buildPayload() } }
+      })
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    setSyncStatus('ok', 'Salvato su Gist');
+    setTimeout(() => setSyncStatus('idle', ''), 2500);
+  } catch(e) {
+    setSyncStatus('error', 'Errore Gist (locale OK)');
+    console.warn('Gist save error', e);
+  }
+}
+
+// Load: try Gist first, fallback to localStorage
+async function load() {
+  const s = getSettings();
+
+  if (s.token && s.gistId) {
+    setSyncStatus('loading', 'Caricamento...');
+    try {
+      const res = await fetch(`https://api.github.com/gists/${s.gistId}`, {
+        headers: {
+          'Authorization': `token ${s.token}`,
+          'X-GitHub-Api-Version': '2022-11-28'
+        }
+      });
+      if (res.ok) {
+        const gist = await res.json();
+        const file = gist.files['presenze-data.json'];
+        if (file && file.content) {
+          const { people, entries } = JSON.parse(file.content);
+          if (people) state.people = people;
+          if (entries) state.entries = entries;
+          // update local cache
+          localStorage.setItem(STORAGE_KEY, file.content);
+          setSyncStatus('ok', 'Dati caricati da Gist');
+          setTimeout(() => setSyncStatus('idle', ''), 2500);
+          return;
+        }
+      }
+    } catch(e) { console.warn('Gist load error', e); }
+    setSyncStatus('error', 'Errore Gist – uso cache locale');
+    setTimeout(() => setSyncStatus('idle', ''), 3000);
+  }
+
+  // Fallback: localStorage
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
@@ -69,6 +151,26 @@ function load() {
     if (people) state.people = people;
     if (entries) state.entries = entries;
   } catch(e) { console.warn('Load error', e); }
+}
+
+// Create a new Gist and save gistId
+async function createGist(token) {
+  const res = await fetch('https://api.github.com/gists', {
+    method: 'POST',
+    headers: {
+      'Authorization': `token ${token}`,
+      'Content-Type': 'application/json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    },
+    body: JSON.stringify({
+      description: 'Presenze App – dati',
+      public: false,
+      files: { 'presenze-data.json': { content: buildPayload() } }
+    })
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+  const gist = await res.json();
+  return gist.id;
 }
 
 /* ===== HELPERS ===== */
@@ -607,8 +709,88 @@ function closeAllModals() {
   state.selectedDay = null;
 }
 
+/* ===== GIST SETTINGS MODAL ===== */
+function openGistSettings() {
+  const s = getSettings();
+  document.getElementById('gistToken').value = s.token || '';
+  document.getElementById('gistId').value = s.gistId || '';
+  document.getElementById('gistStatusMsg').textContent = '';
+  document.getElementById('gistOverlay').classList.add('open');
+}
+
+document.getElementById('gistSettingsBtn')?.addEventListener('click', openGistSettings);
+document.getElementById('gistSettingsBtnMob')?.addEventListener('click', () => {
+  closeDrawer();
+  openGistSettings();
+});
+
+document.getElementById('gistClose')?.addEventListener('click', closeAllModals);
+document.getElementById('gistOverlay')?.addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) closeAllModals();
+});
+
+document.getElementById('gistSaveBtn')?.addEventListener('click', async () => {
+  const token = document.getElementById('gistToken').value.trim();
+  const existingId = document.getElementById('gistId').value.trim();
+  const msg = document.getElementById('gistStatusMsg');
+
+  if (!token) { msg.textContent = '⚠️ Inserisci il token.'; msg.style.color='var(--red)'; return; }
+
+  msg.textContent = '⏳ Connessione a GitHub...';
+  msg.style.color = 'var(--text-2)';
+
+  try {
+    let gistId = existingId;
+    if (!gistId) {
+      msg.textContent = '⏳ Creazione Gist...';
+      gistId = await createGist(token);
+      document.getElementById('gistId').value = gistId;
+    } else {
+      // verify gist is reachable
+      const r = await fetch(`https://api.github.com/gists/${gistId}`, {
+        headers: { 'Authorization': `token ${token}`, 'X-GitHub-Api-Version': '2022-11-28' }
+      });
+      if (!r.ok) throw new Error(`Gist non trovato (HTTP ${r.status})`);
+    }
+    saveSettings({ token, gistId });
+    // immediately push current data
+    await save();
+    msg.textContent = `✓ Connesso! Gist ID: ${gistId}`;
+    msg.style.color = 'var(--accent-dark)';
+    renderSyncBadge();
+  } catch(e) {
+    msg.textContent = `⚠️ Errore: ${e.message}`;
+    msg.style.color = 'var(--red)';
+  }
+});
+
+document.getElementById('gistDisconnectBtn')?.addEventListener('click', () => {
+  if (!confirm('Disconnettere il Gist? I dati locali restano salvati nel browser.')) return;
+  saveSettings({});
+  document.getElementById('gistToken').value = '';
+  document.getElementById('gistId').value = '';
+  document.getElementById('gistStatusMsg').textContent = '✓ Disconnesso.';
+  renderSyncBadge();
+});
+
+function renderSyncBadge() {
+  const s = getSettings();
+  const badge = document.getElementById('syncBadge');
+  const badgeMob = document.getElementById('syncBadgeMob');
+  const connected = !!(s.token && s.gistId);
+  [badge, badgeMob].forEach(el => {
+    if (!el) return;
+    el.textContent = connected ? '☁️ Gist' : '💾 Locale';
+    el.title = connected ? `Gist: ${s.gistId}` : 'Nessun Gist configurato – dati solo nel browser';
+    el.className = 'sync-badge ' + (connected ? 'sync-cloud' : 'sync-local');
+  });
+}
+
 /* ===== INIT ===== */
-load();
-renderPeople();
-renderCalendar();
-populateYearSelect();
+(async () => {
+  await load();
+  renderPeople();
+  renderCalendar();
+  populateYearSelect();
+  renderSyncBadge();
+})();

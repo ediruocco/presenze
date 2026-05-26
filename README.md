@@ -68,6 +68,20 @@ Il file `.xlsx` deve contenere un foglio con queste caratteristiche:
 
 Codici ammessi nelle celle: `P`, `SW`, `Fp`, `Fc`, `M`, `A41`, `A44`, `RC`, `PB`, `PE`, `PL`, `PS`, `MP`.
 
+## Sincronizzazione dati (GitHub Gist)
+
+Per rendere i dati **permanenti e condivisi** tra dispositivi, l'app supporta il salvataggio su un Gist privato di GitHub:
+
+1. Vai su [github.com/settings/tokens/new](https://github.com/settings/tokens/new?scopes=gist&description=Presenze+App) e crea un **Personal Access Token** con scope `gist`
+2. Nell'app, clicca **Sincronizzazione Gist** (sidebar o menu mobile)
+3. Incolla il token → clicca **Connetti e salva**
+4. L'app creerà automaticamente un Gist privato e vi salverà i dati ad ogni modifica
+5. Su qualsiasi altro dispositivo: apri l'app, inserisci lo stesso token e lo stesso Gist ID → i dati vengono caricati automaticamente
+
+> Il Gist ID viene mostrato dopo la prima connessione — annotalo per usarlo su altri dispositivi.
+
+**Senza Gist configurato:** i dati vengono salvati solo nel `localStorage` del browser (si perdono se si cancella la cache o si cambia browser).
+
 ## Dati e privacy
 
 Tutti i dati vengono salvati **esclusivamente nel browser locale** tramite `localStorage`. Nessun dato viene inviato a server esterni.
