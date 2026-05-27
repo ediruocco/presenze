@@ -9,6 +9,18 @@
 </head>
 <body>
 
+<!-- LOADING OVERLAY -->
+<div id="appLoadingOverlay" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:999;flex-direction:column;align-items:center;justify-content:center;gap:14px">
+  <svg width="40" height="40" viewBox="0 0 28 28" fill="none">
+    <rect width="28" height="28" rx="8" fill="#1D9E75"/>
+    <rect x="6" y="7" width="16" height="2" rx="1" fill="white"/>
+    <rect x="6" y="12" width="10" height="2" rx="1" fill="white" opacity=".7"/>
+    <rect x="6" y="17" width="13" height="2" rx="1" fill="white" opacity=".5"/>
+  </svg>
+  <div style="font-size:14px;color:var(--text-2);font-weight:500">Caricamento dati dal Gist…</div>
+  <div style="font-size:12px;color:var(--text-3)">Connessione a GitHub in corso</div>
+</div>
+
 <div class="app-shell">
 
   <!-- SIDEBAR (desktop) -->
@@ -329,6 +341,12 @@
         <strong>Passo 2:</strong> Crea un token con scope <code>gist</code><br>
         <strong>Passo 3:</strong> Incollalo qui sotto e clicca Connetti
       </div>
+      <!-- shown automatically on new browsers -->
+      <div id="gistOnboardingMsg" style="display:none;background:#FFF3CD;border-radius:var(--radius);padding:10px 13px;font-size:12.5px;color:#7A4F00;margin-bottom:14px;border:0.5px solid #F0C040">
+        👋 <strong>Primo accesso da questo browser.</strong><br>
+        Inserisci il tuo token GitHub e il Gist ID per caricare i dati già salvati.
+      </div>
+
       <div class="form-group" style="margin-top:14px">
         <label class="form-label">Personal Access Token GitHub</label>
         <input type="password" id="gistToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" style="font-family:monospace;font-size:12px" />
@@ -338,8 +356,9 @@
         <input type="text" id="gistId" placeholder="Verrà creato automaticamente" style="font-family:monospace;font-size:12px" />
       </div>
       <div id="gistStatusMsg" style="margin-top:10px;font-size:13px;min-height:20px"></div>
-      <div style="display:flex;gap:8px;margin-top:14px">
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
         <button class="btn-primary" id="gistSaveBtn">Connetti e salva</button>
+        <button class="btn-primary" id="gistLoadBtn" style="display:none;background:var(--blue)">☁️ Carica dal Gist</button>
         <button class="btn-ghost" id="gistDisconnectBtn" style="color:var(--red)">Disconnetti</button>
       </div>
     </div>
