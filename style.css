@@ -514,150 +514,357 @@ body {
 }
 .chip-RC { background: var(--surface2); color: var(--text-2); border-color: var(--border-md); }
 
-/* ===== MOBILE CALENDAR ===== */
-
-/*
-  Strategy ≤ 600px:
-  - Cells are fixed height: number row + 2 dot rows for up to 2 people
-  - No text inside cells — only the day number + colored dots
-  - Festivo cell has full red background, white number
-  - Calendar stretches edge-to-edge (no side margins)
-  - Legend scrolls horizontally (no wrap)
-*/
-
+/* mobile: smaller cells */
 @media (max-width: 600px) {
-
-  /* ── View padding ── */
-  .view { padding: 10px 0 20px; }
-
-  /* ── Legend: horizontal scroll, no wrap ── */
-  .legend-bar {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding: 0 12px 6px;
-    gap: 5px;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    margin-bottom: 10px;
-  }
-  .legend-bar::-webkit-scrollbar { display: none; }
-  .legend-chip {
-    white-space: nowrap;
-    flex-shrink: 0;
-    font-size: 10px;
-    padding: 3px 8px;
-  }
-
-  /* ── Calendar wrapper: full width, no rounded corners on sides ── */
-  .calendar-wrapper {
-    border-left: none;
-    border-right: none;
-    border-radius: 0;
-    /* ensure the grid fills the screen width exactly */
-    width: 100vw;
-    position: relative;
-    left: 0;
-  }
-
-  /* ── Header row ── */
-  .cal-header-row div {
-    font-size: 9px;
-    padding: 5px 0;
-    letter-spacing: 0;
-  }
-
-  /* ── Grid: 7 equal columns filling the viewport ── */
-  .cal-grid {
-    grid-template-columns: repeat(7, 1fr);
-    width: 100%;
-  }
-
-  /* ── Cell: fixed compact height, no overflow ── */
-  .cal-cell {
-    min-height: 0;
-    height: 56px;          /* fixed: number (20px) + 2 dot rows (18px each) */
-    padding: 4px 2px 3px;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    border-right: 0.5px solid var(--border);
-    border-bottom: 0.5px solid var(--border);
-  }
-
-  /* ── Day number: centered, larger tap target ── */
-  .day-num {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-2);
-    margin-bottom: 0;
-    line-height: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    flex-shrink: 0;
-  }
-
-  /* ── Festivo: red background, white text ── */
-  .cal-cell.festivo {
-    background: #D93025 !important;
-  }
-  .cal-cell.festivo .day-num {
-    color: #fff !important;
-    font-weight: 700;
-  }
-  .cal-cell.festivo .dot-row .entry-dot {
-    border: 1px solid rgba(255,255,255,0.5);
-  }
-
-  /* Today highlight */
-  .cal-cell.today { background: #EBF8F3; }
-  .cal-cell.today .day-num { color: var(--accent); }
-
-  /* weekend tint */
-  .cal-cell.weekend-day { background: #FAF9F6; }
-
-  /* empty cells */
-  .cal-cell.empty {
-    background: var(--surface2);
-    opacity: 0.3;
-    pointer-events: none;
-  }
-
-  /* selected */
-  .cal-cell.selected { outline: 2px solid var(--accent); outline-offset: -2px; }
-
-  /* ── Dot rows ── */
-  .dot-row {
-    display: flex;
-    flex-direction: column;   /* one dot per person, stacked */
-    gap: 2px;
-    width: 100%;
-    align-items: center;
-    flex: 1;
-    justify-content: center;
-  }
-
-  /* Each person gets a pill: colored bar spanning most of cell width */
-  .entry-dot {
-    width: 70%;
-    height: 5px;
-    border-radius: 3px;
-    display: block;
-    flex-shrink: 0;
-  }
-
-  /* Festivo dot on day number */
-  .festivo-dot { display: none; }   /* hidden on mobile — cell bg is already red */
-
-  /* Hide desktop elements inside cells */
-  .day-entries  { display: none; }
-  .festivo-label { display: none; }
+  .cal-cell { min-height: 58px; padding: 5px 3px 3px; }
+  .day-num  { font-size: 11px; }
+  .entry-chip { font-size: 9px; padding: 1px 3px; }
+  .cal-header-row div { font-size: 9.5px; padding: 7px 0; }
+  .cal-cell.festivo-label { font-size: 8px; }
 }
 
-/* ── Dot colors ── */
+/* ===== FESTIVO BADGE (modal) ===== */
+.festivo-badge {
+  font-size: 11.5px;
+  color: #C01515;
+  font-weight: 600;
+  margin-top: 3px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ===== STATS VIEW ===== */
+.year-select {
+  font-size: 13px;
+  padding: 7px 10px;
+  border: 0.5px solid var(--border-md);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.stats-person-block {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+
+.stats-person-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 0.5px solid var(--border);
+  background: var(--surface2);
+}
+
+.stats-person-header h3 { font-size: 15px; font-weight: 500; }
+.stats-matricola { font-size: 12px; color: var(--text-3); }
+
+.stats-totals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  border-bottom: 0.5px solid var(--border);
+}
+
+.stat-item {
+  padding: 12px 14px;
+  border-right: 0.5px solid var(--border);
+  text-align: center;
+}
+.stat-item:last-child { border-right: none; }
+.stat-num { font-size: 20px; font-weight: 500; }
+.stat-lbl { font-size: 10.5px; color: var(--text-3); margin-top: 2px; }
+
+.stats-table-wrap { overflow-x: auto; }
+
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.stats-table th {
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 500;
+  font-size: 11px;
+  color: var(--text-3);
+  background: var(--surface2);
+  border-bottom: 0.5px solid var(--border);
+  white-space: nowrap;
+}
+.stats-table td {
+  padding: 8px 12px;
+  border-bottom: 0.5px solid var(--border);
+  color: var(--text-2);
+}
+.stats-table tr:last-child td { border-bottom: none; }
+.stats-table tr:hover td { background: #FAFAF8; }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.38);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  padding: 16px;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  border: 0.5px solid var(--border-md);
+  width: 480px;
+  max-width: 100%;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modal-sm { width: 380px; }
+
+/* on mobile, modals slide up from bottom */
+@media (max-width: 600px) {
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .modal {
+    width: 100%;
+    max-width: 100%;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    max-height: 92dvh;
+  }
+  .modal-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--border-md);
+    border-radius: 2px;
+    margin: 10px auto 0;
+    flex-shrink: 0;
+  }
+}
+
+.modal-handle { display: none; }
+@media (max-width: 600px) { .modal-handle { display: block; } }
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 0.5px solid var(--border);
+  flex-shrink: 0;
+}
+.modal-header h3 { font-size: 15px; font-weight: 500; }
+
+.modal-body {
+  padding: 14px 18px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+  min-height: 20px;
+}
+
+.modal-entry {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--surface2);
+  border-radius: var(--radius);
+  font-size: 13px;
+}
+
+.modal-entry-info { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.modal-entry-delete {
+  background: none; border: none; cursor: pointer; color: var(--text-3);
+  padding: 2px 8px; border-radius: 4px; font-size: 12px; flex-shrink: 0;
+}
+.modal-entry-delete:hover { background: var(--red-light); color: var(--red); }
+
+.modal-empty { font-size: 13px; color: var(--text-3); text-align: center; padding: 10px 0; }
+
+.modal-add {
+  border-top: 0.5px solid var(--border);
+  padding-top: 13px;
+}
+
+.form-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+.form-row select, .form-row input[type="text"] { flex: 1; min-width: 110px; }
+.form-group { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+.form-label { font-size: 12px; color: var(--text-2); }
+
+select, input[type="text"], input[type="password"] {
+  font-size: 13px;
+  padding: 8px 10px;
+  border: 0.5px solid var(--border-md);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  width: 100%;
+}
+select:focus, input[type="text"]:focus, input[type="password"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(29,158,117,0.12);
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.1s;
+  white-space: nowrap;
+}
+.btn-primary:hover { background: var(--accent-dark); }
+
+/* ===== IMPORT MODAL ===== */
+.import-hint {
+  font-size: 12.5px;
+  color: var(--text-2);
+  line-height: 1.6;
+  margin-bottom: 14px;
+  background: var(--blue-light);
+  padding: 10px 12px;
+  border-radius: var(--radius);
+}
+
+.drop-zone {
+  border: 1.5px dashed var(--border-md);
+  border-radius: var(--radius-lg);
+  padding: 24px 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  color: var(--text-3);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.drop-zone:hover, .drop-zone.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  color: var(--accent-dark);
+}
+.drop-zone input[type="file"] { display: none; }
+
+.import-status { margin-top: 10px; font-size: 13px; color: var(--text-2); }
+.import-status.success { color: var(--accent-dark); }
+.import-status.error   { color: var(--red); }
+
+.import-preview {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-3);
+  max-height: 90px;
+  overflow-y: auto;
+  background: var(--surface2);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  display: none;
+}
+
+/* ===== GIST SYNC ===== */
+.sync-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 20px;
+  cursor: default;
+  white-space: nowrap;
+}
+.sync-cloud { background: var(--accent-light); color: var(--accent-dark); }
+.sync-local { background: var(--surface2); color: var(--text-3); border: 0.5px solid var(--border-md); }
+
+.sync-status { font-size: 11px; min-height: 16px; padding: 2px 0; }
+.sync-saving  { color: var(--amber); }
+.sync-ok      { color: var(--accent-dark); }
+.sync-error   { color: var(--red); }
+.sync-loading { color: var(--blue); }
+.sync-idle    { color: transparent; }
+
+.gist-info-box {
+  background: var(--blue-light);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-size: 12.5px;
+  color: var(--text-2);
+  line-height: 1.65;
+}
+.gist-info-box a { color: var(--blue); }
+.gist-info-box code {
+  background: rgba(55,138,221,0.15);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* ===== PERSON COLORS ===== */
+.color-0 { background-color: #1D9E75; }
+.color-1 { background-color: #378ADD; }
+.color-2 { background-color: #D4537E; }
+.color-3 { background-color: #7F77DD; }
+.color-4 { background-color: #BA7517; }
+.color-5 { background-color: #E24B4A; }
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-md); border-radius: 4px; }
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+
+/* ===== MOBILE CALENDAR: DOT VIEW ===== */
+
+/* Dot indicator per ogni presenza */
+.dot-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 3px;
+  justify-content: flex-start;
+}
+
+.entry-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Colori dot per tipo presenza */
 .dot-P    { background: var(--accent); }
 .dot-SW   { background: var(--blue); }
 .dot-Fp,
@@ -671,3 +878,73 @@ body {
 .dot-MP,
 .dot-PB   { background: var(--purple); }
 .dot-RC   { background: var(--text-3); }
+
+/* Pallino festività accanto al numero */
+.festivo-dot {
+  font-size: 7px;
+  line-height: 1;
+  margin-left: 1px;
+  vertical-align: middle;
+}
+
+/* Celle mobile più compatte ma ben toccabili */
+@media (max-width: 600px) {
+  .cal-cell {
+    min-height: 52px;
+    padding: 6px 4px 4px;
+    gap: 2px;
+  }
+
+  .cal-cell.selected {
+    outline-width: 2px;
+  }
+
+  /* Numero giorno più leggibile */
+  .day-num {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  /* Header giorni settimana: solo iniziale */
+  .cal-header-row div {
+    font-size: 9px;
+    padding: 6px 0;
+  }
+
+  /* Legenda scrollabile su mobile */
+  .legend-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    gap: 5px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .legend-bar::-webkit-scrollbar { display: none; }
+  .legend-chip {
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-size: 10.5px;
+    padding: 3px 8px;
+  }
+
+  /* Calendario full-width senza bordo arrotondato sui lati */
+  .calendar-wrapper {
+    border-radius: var(--radius);
+    border-left: none;
+    border-right: none;
+    margin: 0 -12px;
+    border-radius: 0;
+  }
+
+  /* Stile festivo più leggibile su mobile */
+  .cal-cell.festivo .day-num {
+    color: #C01515;
+  }
+}
+
+/* Legenda dot mobile — mostrata sotto la legenda chip su schermi molto piccoli */
+@media (max-width: 400px) {
+  .legend-chip { font-size: 10px; padding: 2px 7px; }
+}
