@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" href="./icon.png" type="image/png" class="icona">
   <title>Gestione Presenze</title>
   
   <!-- SheetJS per la lettura e il parsing di file Excel (.xlsx) -->
@@ -477,8 +476,23 @@
     .cal-cell:nth-child(7n) { border-right: none; }
 
     .cal-cell.empty { background: var(--surface2); cursor: default; opacity: 0.35; pointer-events: none; }
-    .cal-cell.today { background: #F0FBF7; }
-    .cal-cell.today .day-num { color: var(--accent); font-weight: 700; }
+    
+    /* Evidenziazione Oggi Premium */
+    .cal-cell.today { 
+      background: #E8F8F2 !important; 
+      border: 1px solid rgba(29, 158, 117, 0.3) !important;
+    }
+    .cal-cell.today .day-num { 
+      background: var(--accent); 
+      color: white !important; 
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     .cal-cell.weekend-day { background: #FDFCF9; }
     .cal-cell.weekend-day.empty { background: var(--surface2); }
     .cal-cell.selected { outline: 2px solid var(--accent); outline-offset: -2px; }
@@ -486,15 +500,18 @@
     /* Festività nazionale */
     .cal-cell.festivo { background: #FFF5F5; }
     .cal-cell.festivo .day-num { color: #C01515; font-weight: 700; }
-    .cal-cell.festivo-label {
-      font-size: 9px;
+    
+    /* Spazio per la descrizione posizionata sotto al numero */
+    .cal-cell .festivo-label {
+      font-size: 9.5px;
       color: #C01515;
       font-weight: 600;
+      margin-top: 3px;
       margin-bottom: 3px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      opacity: .85;
+      opacity: .95;
     }
 
     .day-num {
@@ -625,6 +642,19 @@
         flex-shrink: 0;
       }
 
+      /* Oggi su Mobile */
+      .cal-cell.today { 
+        background: #E8F8F2 !important; 
+        border: 1px solid rgba(29, 158, 117, 0.3) !important;
+      }
+      .cal-cell.today .day-num { 
+        background: var(--accent); 
+        color: white !important; 
+        border-radius: 4px;
+        padding: 2px 5px;
+        font-weight: 700;
+      }
+
       /* Sfondo chiaro premium festività */
       .cal-cell.festivo {
         background: #FFF5F5 !important;
@@ -634,8 +664,6 @@
         font-weight: 700;
       }
 
-      .cal-cell.today { background: #F0FBF7; }
-      .cal-cell.today .day-num { color: var(--accent); }
       .cal-cell.weekend-day { background: #FDFCF9; }
       .cal-cell.empty { background: var(--surface2); opacity: 0.35; pointer-events: none; }
       .cal-cell.selected { outline: 2px solid var(--accent); outline-offset: -2px; }
@@ -657,16 +685,18 @@
         text-overflow: ellipsis;
       }
 
-      .festivo-label {
+      /* Descrizione festività su Mobile */
+      .cal-cell .festivo-label {
         display: block !important;
         font-size: 8.5px;
         color: #C01515;
         font-weight: 600;
-        margin-bottom: 1px;
+        margin-top: 1px;
+        margin-bottom: 2px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        opacity: .85;
+        opacity: .95;
       }
 
       /* Rimuove i vecchi pallini non descrittivi */
@@ -1050,7 +1080,7 @@
 
       <!-- Hint di scorrimento orizzontale -->
       <div class="scroll-hint">
-        <span>↔️ Trascina lateralmente il calendario per visualizzare tutti i giorni</span>
+        <span>↔️ Trascina lateralmente il calendario per visualizzare Sabato e Domenica</span>
       </div>
 
       <!-- Contenitore per lo scorrimento orizzontale su smartphone -->
@@ -1444,6 +1474,7 @@ function colorClass(idx) {
   return `color-${idx % 6}`;
 }
 
+/* Restituisce le iniziali */
 function initials(name) {
   return name.split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
 }
@@ -1520,7 +1551,7 @@ function renderCalendar() {
   for (let d = 1; d <= daysInMonth; d++) {
     const dow = (firstDow + d - 1) % 7;
     const isWeekend = dow >= 5;
-    const isToday = d === todayDateMatches(y, m, d);
+    const isToday = todayDateMatches(y, m, d); // Risolto bug di confronto numerico
     const isSel = state.selectedDay && state.selectedDay.d === d;
     const dk = dateKey(y, m, d);
 
@@ -1534,11 +1565,13 @@ function renderCalendar() {
 
     let inner = '';
 
-    // Il layout responsive ora visualizza sempre il dettaglio dei turni (chip)
+    // Il numero del giorno viene renderizzato per PRIMO in modo che sia allineato come gli altri giorni
+    inner += `<div class="day-num">${d}</div>`;
+    
+    // La descrizione del festivo viene renderizzata subito SOTTO al numero
     if (festivo) {
       inner += `<div class="festivo-label">${festivo}</div>`;
     }
-    inner += `<div class="day-num">${d}</div>`;
 
     let chips = '';
     if (state.entries[dk]) {
@@ -1568,6 +1601,16 @@ function renderCalendar() {
 function todayDateMatches(y, m, d) {
   const today = new Date();
   return d === today.getDate() && m === today.getMonth() && y === today.getFullYear();
+}
+
+/* Centra il giorno oggi nello scrollview (particolarmente utile su Mobile) */
+function scrollToToday() {
+  setTimeout(() => {
+    const todayCell = document.querySelector('.cal-cell.today');
+    if (todayCell) {
+      todayCell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }, 100);
 }
 
 /* ===== DAY MODAL ===== */
@@ -1652,12 +1695,14 @@ document.getElementById('nextMonth').addEventListener('click', () => {
   renderCalendar();
 });
 
+/* Naviga al mese corrente e centra visivamente oggi */
 document.getElementById('todayBtn').addEventListener('click', () => {
   const t = new Date();
   state.currentYear = t.getFullYear();
   state.currentMonth = t.getMonth();
   state.selectedDay = null;
   renderCalendar();
+  scrollToToday();
 });
 
 /* ===== SIDEBAR (MOBILE) ===== */
@@ -1694,6 +1739,9 @@ function switchView(view) {
     renderStats();
   } else {
     updateTopbarTitle();
+    if (view === 'calendar') {
+      scrollToToday();
+    }
   }
   closeSidebar();
 }
@@ -2150,6 +2198,7 @@ function renderSyncBadge() {
   renderCalendar();
   populateYearSelect();
   renderSyncBadge();
+  scrollToToday(); // Posiziona subito lo scroll su oggi all'avvio
 
   if (!hasCredentials) {
     const neverAsked = !localStorage.getItem('presenze_onboarded');
@@ -2165,7 +2214,10 @@ function renderSyncBadge() {
   let resizeTimer;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => renderCalendar(), 120);
+    resizeTimer = setTimeout(() => {
+      renderCalendar();
+      scrollToToday();
+    }, 120);
   });
 })();
 </script>
