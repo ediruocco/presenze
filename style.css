@@ -844,3 +844,107 @@ select:focus, input[type="text"]:focus, input[type="password"]:focus {
 
 /* ===== ANIMATIONS ===== */
 @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+
+/* ===== MOBILE CALENDAR: DOT VIEW ===== */
+
+/* Dot indicator per ogni presenza */
+.dot-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 3px;
+  justify-content: flex-start;
+}
+
+.entry-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Colori dot per tipo presenza */
+.dot-P    { background: var(--accent); }
+.dot-SW   { background: var(--blue); }
+.dot-Fp,
+.dot-Fc   { background: var(--amber); }
+.dot-M    { background: var(--red); }
+.dot-A41,
+.dot-A44,
+.dot-PE,
+.dot-PL,
+.dot-PS,
+.dot-MP,
+.dot-PB   { background: var(--purple); }
+.dot-RC   { background: var(--text-3); }
+
+/* Pallino festività accanto al numero */
+.festivo-dot {
+  font-size: 7px;
+  line-height: 1;
+  margin-left: 1px;
+  vertical-align: middle;
+}
+
+/* Celle mobile più compatte ma ben toccabili */
+@media (max-width: 600px) {
+  .cal-cell {
+    min-height: 52px;
+    padding: 6px 4px 4px;
+    gap: 2px;
+  }
+
+  .cal-cell.selected {
+    outline-width: 2px;
+  }
+
+  /* Numero giorno più leggibile */
+  .day-num {
+    font-size: 12px;
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  /* Header giorni settimana: solo iniziale */
+  .cal-header-row div {
+    font-size: 9px;
+    padding: 6px 0;
+  }
+
+  /* Legenda scrollabile su mobile */
+  .legend-bar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    gap: 5px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .legend-bar::-webkit-scrollbar { display: none; }
+  .legend-chip {
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-size: 10.5px;
+    padding: 3px 8px;
+  }
+
+  /* Calendario full-width senza bordo arrotondato sui lati */
+  .calendar-wrapper {
+    border-radius: var(--radius);
+    border-left: none;
+    border-right: none;
+    margin: 0 -12px;
+    border-radius: 0;
+  }
+
+  /* Stile festivo più leggibile su mobile */
+  .cal-cell.festivo .day-num {
+    color: #C01515;
+  }
+}
+
+/* Legenda dot mobile — mostrata sotto la legenda chip su schermi molto piccoli */
+@media (max-width: 400px) {
+  .legend-chip { font-size: 10px; padding: 2px 7px; }
+}
