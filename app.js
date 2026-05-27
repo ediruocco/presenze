@@ -226,8 +226,11 @@ function updatePersonSelects() {
 /* ===== RENDER CALENDAR ===== */
 function renderCalendar() {
   const { currentYear: y, currentMonth: m } = state;
-  document.getElementById('monthTitle').textContent = `${MONTH_NAMES[m]} ${y}`;
-  document.getElementById('viewSub').textContent = 'Clicca su un giorno per aggiungere o modificare una voce';
+  updateTopbarTitle();
+  const viewSubEl = document.getElementById('viewSub');
+  if (viewSubEl && document.getElementById('view-calendar').classList.contains('active')) {
+    viewSubEl.textContent = 'Clicca su un giorno per aggiungere o modificare una voce';
+  }
 
   const daysInMonth = new Date(y, m + 1, 0).getDate();
   let firstDow = new Date(y, m, 1).getDay(); // 0=Sun
@@ -378,17 +381,56 @@ document.getElementById('todayBtn').addEventListener('click', () => {
   renderCalendar();
 });
 
+/* ===== SIDEBAR OPEN/CLOSE (mobile) ===== */
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sidebarOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+document.getElementById('menuBtn').addEventListener('click', openSidebar);
+document.getElementById('sidebarClose').addEventListener('click', closeSidebar);
+document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
+
 /* ===== NAV BUTTONS ===== */
+function switchView(view) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll(`.nav-btn[data-view="${view}"]`).forEach(b => b.classList.add('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(`view-${view}`).classList.add('active');
+
+  // Show/hide topbar nav (only relevant on calendar)
+  const calNav = document.getElementById('calendarNav');
+  if (calNav) calNav.classList.toggle('hidden', view !== 'calendar');
+
+  // Update topbar title for stats view
+  const monthTitle = document.getElementById('monthTitle');
+  const viewSub = document.getElementById('viewSub');
+  if (view === 'stats') {
+    if (monthTitle) monthTitle.textContent = 'Riepilogo';
+    if (viewSub) viewSub.textContent = 'Totali per anno e persona';
+    renderStats();
+  } else {
+    updateTopbarTitle();
+  }
+
+  closeSidebar();
+}
+
 document.querySelectorAll('.nav-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const view = btn.dataset.view;
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.getElementById(`view-${view}`).classList.add('active');
-    if (view === 'stats') renderStats();
-  });
+  btn.addEventListener('click', () => switchView(btn.dataset.view));
 });
+
+function updateTopbarTitle() {
+  const { currentYear: y, currentMonth: m } = state;
+  const el = document.getElementById('monthTitle');
+  if (el) el.textContent = `${MONTH_NAMES[m]} ${y}`;
+}
 
 /* ===== STATS ===== */
 function renderStats() {
@@ -719,10 +761,7 @@ function openGistSettings() {
 }
 
 document.getElementById('gistSettingsBtn')?.addEventListener('click', openGistSettings);
-document.getElementById('gistSettingsBtnMob')?.addEventListener('click', () => {
-  closeDrawer();
-  openGistSettings();
-});
+
 
 document.getElementById('gistClose')?.addEventListener('click', closeAllModals);
 document.getElementById('gistOverlay')?.addEventListener('click', (e) => {
@@ -812,7 +851,7 @@ document.getElementById('gistDisconnectBtn')?.addEventListener('click', () => {
 function renderSyncBadge() {
   const s = getSettings();
   const badge = document.getElementById('syncBadge');
-  const badgeMob = document.getElementById('syncBadgeMob');
+  const badgeMob = null; // removed in v1.2
   const connected = !!(s.token && s.gistId);
   [badge, badgeMob].forEach(el => {
     if (!el) return;
