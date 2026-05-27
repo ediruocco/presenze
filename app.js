@@ -224,20 +224,27 @@ function updatePersonSelects() {
 }
 
 /* ===== RENDER CALENDAR ===== */
+function isMobile() {
+  return window.innerWidth <= 600;
+}
+
 function renderCalendar() {
   const { currentYear: y, currentMonth: m } = state;
   updateTopbarTitle();
   const viewSubEl = document.getElementById('viewSub');
   if (viewSubEl && document.getElementById('view-calendar').classList.contains('active')) {
-    viewSubEl.textContent = 'Clicca su un giorno per aggiungere o modificare una voce';
+    viewSubEl.textContent = isMobile()
+      ? 'Tocca un giorno per aggiungere una voce'
+      : 'Clicca su un giorno per aggiungere o modificare una voce';
   }
 
   const daysInMonth = new Date(y, m + 1, 0).getDate();
   let firstDow = new Date(y, m, 1).getDay(); // 0=Sun
-  firstDow = (firstDow + 6) % 7; // convert to Mon=0
+  firstDow = (firstDow + 6) % 7; // Mon=0
 
   const today = new Date();
   const grid = document.getElementById('calGrid');
+  const mobile = isMobile();
   let html = '';
 
   // empty cells
@@ -252,26 +259,59 @@ function renderCalendar() {
     const isSel = state.selectedDay && state.selectedDay.d === d;
     const dk = dateKey(y, m, d);
 
+    // festività
+    const festivo = getHoliday(y, m + 1, d);
+
     let cls = 'cal-cell';
     if (isWeekend) cls += ' weekend-day';
-    if (isToday) cls += ' today';
-    if (isSel) cls += ' selected';
+    if (isToday)   cls += ' today';
+    if (isSel)     cls += ' selected';
+    if (festivo)   cls += ' festivo';
 
-    // entry chips
-    let chips = '';
-    if (state.entries[dk]) {
-      state.people.forEach((p, pi) => {
-        const type = state.entries[dk][p.id];
-        if (type) {
-          chips += `<div class="entry-chip chip-${type}" style="border-left-color:var(--${personColor(pi)})">${initials(p.name)}: ${TYPE_LABELS[type] ? TYPE_LABELS[type].split(' ').slice(1).join(' ') : type}</div>`;
-        }
-      });
+    let inner = '';
+
+    if (mobile) {
+      // ── MOBILE: compact dot view ──
+      // Day number row: number + optional festivo dot
+      const festivoDot = festivo
+        ? `<span class="festivo-dot" title="${festivo}">🔴</span>` : '';
+      inner += `<div class="day-num">${d}${festivoDot}</div>`;
+
+      // Dots for each person entry
+      const dotList = [];
+      if (state.entries[dk]) {
+        state.people.forEach((p, pi) => {
+          const type = state.entries[dk][p.id];
+          if (type) {
+            dotList.push(`<span class="entry-dot dot-${type}" title="${p.name}: ${TYPE_LABELS[type] || type}"></span>`);
+          }
+        });
+      }
+      if (dotList.length) {
+        inner += `<div class="dot-row">${dotList.join('')}</div>`;
+      }
+
+    } else {
+      // ── DESKTOP: full chip view ──
+      // Festivo label
+      if (festivo) {
+        inner += `<div class="festivo-label">${festivo}</div>`;
+      }
+      inner += `<div class="day-num">${d}</div>`;
+
+      let chips = '';
+      if (state.entries[dk]) {
+        state.people.forEach((p, pi) => {
+          const type = state.entries[dk][p.id];
+          if (type) {
+            chips += `<div class="entry-chip chip-${type}" style="border-left-color:var(--${personColor(pi)})">${initials(p.name)}: ${TYPE_LABELS[type] ? TYPE_LABELS[type].split(' ').slice(1).join(' ') : type}</div>`;
+          }
+        });
+      }
+      inner += `<div class="day-entries">${chips}</div>`;
     }
 
-    html += `<div class="${cls}" data-d="${d}">
-      <div class="day-num">${d}</div>
-      <div class="day-entries">${chips}</div>
-    </div>`;
+    html += `<div class="${cls}" data-d="${d}">${inner}</div>`;
   }
 
   grid.innerHTML = html;
@@ -890,4 +930,11 @@ function renderSyncBadge() {
     }
   }
   localStorage.setItem('presenze_onboarded', '1');
+
+  // Re-render on resize/orientation change (desktop↔mobile layout switch)
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => renderCalendar(), 120);
+  });
 })();
