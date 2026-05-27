@@ -43,63 +43,6 @@ const EXCEL_CODE_MAP = {
   'MP':  'MP',
 };
 
-/* ===== FESTIVITÀ ITALIANE ===== */
-
-// Algoritmo di Meeus/Jones/Butcher per calcolo Pasqua
-function getEaster(year) {
-  const a = year % 19;
-  const b = Math.floor(year / 100);
-  const c = year % 100;
-  const d = Math.floor(b / 4);
-  const e = b % 4;
-  const f = Math.floor((b + 8) / 25);
-  const g = Math.floor((b - f + 1) / 3);
-  const h = (19 * a + b - d - g + 15) % 30;
-  const i = Math.floor(c / 4);
-  const k = c % 4;
-  const l = (32 + 2 * e + 2 * i - h - k) % 7;
-  const m = Math.floor((a + 11 * h + 22 * l) / 451);
-  const month = Math.floor((h + l - 7 * m + 114) / 31); // 1=Jan
-  const day   = ((h + l - 7 * m + 114) % 31) + 1;
-  return { month, day }; // month is 1-based
-}
-
-// Restituisce il nome della festività o null
-// month è 1-based (come nel calendario)
-function getHoliday(year, month, day) {
-  // Festività fisse
-  const fixed = {
-    '1-1':   'Capodanno',
-    '1-6':   'Epifania',
-    '4-25':  'Liberazione',
-    '5-1':   'Festa Lavoratori',
-    '6-2':   'Rep. Italiana',
-    '8-15':  'Ferragosto',
-    '11-1':  'Ognissanti',
-    '12-8':  'Immacolata',
-    '12-25': 'Natale',
-    '12-26': 'S. Stefano',
-  };
-
-  const key = `${month}-${day}`;
-  if (fixed[key]) return fixed[key];
-
-  // Pasqua e Lunedì dell'Angelo (mobile)
-  const easter = getEaster(year);
-  if (month === easter.month && day === easter.day) return 'Pasqua';
-
-  // Lunedì dell'Angelo = Pasqua + 1 giorno
-  const easterDate = new Date(year, easter.month - 1, easter.day);
-  const angelMonday = new Date(easterDate);
-  angelMonday.setDate(easterDate.getDate() + 1);
-  if (month === angelMonday.getMonth() + 1 && day === angelMonday.getDate()) {
-    return 'Lunedì Angelo';
-  }
-
-  return null;
-}
-
-
 let state = {
   people: [
     { id: 'p1', name: 'Di Ruocco Ernesto', matricola: '57006' },
@@ -328,10 +271,13 @@ function renderCalendar() {
     let inner = '';
 
     if (mobile) {
-      // ── MOBILE: number + colored pill per person ──
-      inner += `<div class="day-num">${d}</div>`;
+      // ── MOBILE: compact dot view ──
+      // Day number row: number + optional festivo dot
+      const festivoDot = festivo
+        ? `<span class="festivo-dot" title="${festivo}">🔴</span>` : '';
+      inner += `<div class="day-num">${d}${festivoDot}</div>`;
 
-      // One pill per person (max 2 shown = 2 rows of 5px each)
+      // Dots for each person entry
       const dotList = [];
       if (state.entries[dk]) {
         state.people.forEach((p, pi) => {
@@ -341,8 +287,9 @@ function renderCalendar() {
           }
         });
       }
-      // Always render dot-row (even if empty keeps height stable)
-      inner += `<div class="dot-row">${dotList.join('')}</div>`;
+      if (dotList.length) {
+        inner += `<div class="dot-row">${dotList.join('')}</div>`;
+      }
 
     } else {
       // ── DESKTOP: full chip view ──
