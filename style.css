@@ -643,3 +643,9 @@ input[type="password"]:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(29,158,117,0.12);
 }
+
+/* ===== LOADING OVERLAY ===== */
+#appLoadingOverlay {
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity:0 } to { opacity:1 } }
