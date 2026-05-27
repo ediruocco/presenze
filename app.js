@@ -753,11 +753,47 @@ document.getElementById('gistSaveBtn')?.addEventListener('click', async () => {
       if (!r.ok) throw new Error(`Gist non trovato (HTTP ${r.status})`);
     }
     saveSettings({ token, gistId });
-    // immediately push current data
-    await save();
-    msg.textContent = `✓ Connesso! Gist ID: ${gistId}`;
+
+    // If this is a new browser (no local data), pull from Gist
+    // If local data exists, push it to Gist
+    const localRaw = localStorage.getItem(STORAGE_KEY);
+    const hasLocalData = localRaw && JSON.parse(localRaw).entries &&
+      Object.keys(JSON.parse(localRaw).entries).length > 0;
+
+    if (!hasLocalData && existingId) {
+      // Pull: load data from existing Gist
+      msg.textContent = '⏳ Caricamento dati dal Gist...';
+      await load();
+      renderPeople();
+      renderCalendar();
+      populateYearSelect();
+      msg.textContent = `✓ Dati caricati! ${Object.keys(state.entries).length} giorni sincronizzati.`;
+    } else {
+      // Push: save current local data to Gist
+      await save();
+      msg.textContent = `✓ Connesso! Gist ID: ${gistId}`;
+    }
     msg.style.color = 'var(--accent-dark)';
     renderSyncBadge();
+    // show manual load button
+    document.getElementById('gistLoadBtn').style.display = 'inline-flex';
+  } catch(e) {
+    msg.textContent = `⚠️ Errore: ${e.message}`;
+    msg.style.color = 'var(--red)';
+  }
+});
+
+document.getElementById('gistLoadBtn')?.addEventListener('click', async () => {
+  const msg = document.getElementById('gistStatusMsg');
+  msg.textContent = '⏳ Caricamento dal Gist...';
+  msg.style.color = 'var(--text-2)';
+  try {
+    await load();
+    renderPeople();
+    renderCalendar();
+    populateYearSelect();
+    msg.textContent = `✓ Caricati ${Object.keys(state.entries).length} giorni dal Gist.`;
+    msg.style.color = 'var(--accent-dark)';
   } catch(e) {
     msg.textContent = `⚠️ Errore: ${e.message}`;
     msg.style.color = 'var(--red)';
@@ -788,9 +824,31 @@ function renderSyncBadge() {
 
 /* ===== INIT ===== */
 (async () => {
+  const s = getSettings();
+  const hasCredentials = !!(s.token && s.gistId);
+
+  // Show a loading screen while fetching from Gist
+  if (hasCredentials) {
+    document.getElementById('appLoadingOverlay').style.display = 'flex';
+  }
+
   await load();
+
+  document.getElementById('appLoadingOverlay').style.display = 'none';
   renderPeople();
   renderCalendar();
   populateYearSelect();
   renderSyncBadge();
+
+  // New browser: no credentials saved → open Gist setup automatically
+  if (!hasCredentials) {
+    const neverAsked = !localStorage.getItem('presenze_onboarded');
+    if (neverAsked) {
+      setTimeout(() => {
+        document.getElementById('gistOnboardingMsg').style.display = 'block';
+        openGistSettings();
+      }, 600);
+    }
+  }
+  localStorage.setItem('presenze_onboarded', '1');
 })();
